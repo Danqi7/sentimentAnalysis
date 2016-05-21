@@ -1,4 +1,4 @@
-# Name: 
+# Name:
 # Date:
 # Description:
 #
@@ -7,53 +7,94 @@
 import math, os, pickle, re
 
 class Bayes_Classifier:
+    dict_positive = dict();
+    dict_negative = dict();
 
-   def __init__(self):
-      """This method initializes and trains the Naive Bayes Sentiment Classifier.  If a 
-      cache of a trained classifier has been stored, it loads this cache.  Otherwise, 
-      the system will proceed through training.  After running this method, the classifier 
-      is ready to classify input text."""
+    def __init__(self):
+        """This method initializes and trains the Naive Bayes Sentiment Classifier.  If a
+        cache of a trained classifier has been stored, it loads this cache.  Otherwise,
+        the system will proceed through training.  After running this method, the classifier
+        is ready to classify input text."""
 
-   def train(self):   
-      """Trains the Naive Bayes Sentiment Classifier."""
-    
-   def classify(self, sText):
-      """Given a target string sText, this function returns the most likely document
-      class to which the target string belongs (i.e., positive, negative or neutral).
-      """
+        #check if dicts already exist
+        if os.path.isfile("dict_positive") and os.path.isfile("dict_negative"):
+            self.dict_positive = self.load("dict_positive")
+            self.dict_negative = self.load("dict_negative")
+            #print "YO!"
+        else:
+            self.train()
+            #print "finished training!"
 
-   def loadFile(self, sFilename):
-      """Given a file name, return the contents of the file as a string."""
+    def train(self):
+        """Trains the Naive Bayes Sentiment Classifier."""
+        #get the list of training data
+        fileList = []
+        for f in os.walk("movies_reviews/"):
+          fileList = f[2]
+          break
 
-      f = open(sFilename, "r")
-      sTxt = f.read()
-      f.close()
-      return sTxt
-   
-   def save(self, dObj, sFilename):
-      """Given an object and a file name, write the object to the file using pickle."""
+        #build two dicts
+        for filename in fileList:
+          f = self.loadFile("movies_reviews/"+filename)
+          tokens = self.tokenize(f)
+          #moives-1-ID
+          if filename[7] == '1': #negative reviews
+              for token in tokens:
+                  if token in self.dict_negative:
+                      self.dict_negative[token] = self.dict_negative[token] + 1
+                  else:
+                      self.dict_negative[token] = 1
+          if filename[7] == '5': #positive reviews
+              for token in tokens:
+                  if token in self.dict_positive:
+                      self.dict_positive[token] = self.dict_positive[token] + 1
+                  else:
+                      self.dict_positive[token] = 1
 
-      f = open(sFilename, "w")
-      p = pickle.Pickler(f)
-      p.dump(dObj)
-      f.close()
-   
-   def load(self, sFilename):
-      """Given a file name, load and return the object stored in the file."""
+        #save dicts
+        self.save(self.dict_positive, "dict_positive")
+        self.save(self.dict_negative, "dict_negative")
 
-      f = open(sFilename, "r")
-      u = pickle.Unpickler(f)
-      dObj = u.load()
-      f.close()
-      return dObj
 
-   def tokenize(self, sText): 
-      """Given a string of text sText, returns a list of the individual tokens that 
-      occur in that string (in order)."""
 
-      lTokens = []
-      sToken = ""
-      for c in sText:
+
+    def classify(self, sText):
+        """Given a target string sText, this function returns the most likely document
+        class to which the target string belongs (i.e., positive, negative or neutral).
+        """
+
+    def loadFile(self, sFilename):
+        """Given a file name, return the contents of the file as a string."""
+
+        f = open(sFilename, "r")
+        sTxt = f.read()
+        f.close()
+        return sTxt
+
+    def save(self, dObj, sFilename):
+        """Given an object and a file name, write the object to the file using pickle."""
+
+        f = open(sFilename, "w")
+        p = pickle.Pickler(f)
+        p.dump(dObj)
+        f.close()
+
+    def load(self, sFilename):
+        """Given a file name, load and return the object stored in the file."""
+
+        f = open(sFilename, "r")
+        u = pickle.Unpickler(f)
+        dObj = u.load()
+        f.close()
+        return dObj
+
+    def tokenize(self, sText):
+        """Given a string of text sText, returns a list of the individual tokens that
+        occur in that string (in order)."""
+
+        lTokens = []
+        sToken = ""
+        for c in sText:
          if re.match("[a-zA-Z0-9]", str(c)) != None or c == "\"" or c == "_" or c == "-":
             sToken += c
          else:
@@ -62,8 +103,8 @@ class Bayes_Classifier:
                sToken = ""
             if c.strip() != "":
                lTokens.append(str(c.strip()))
-               
-      if sToken != "":
+
+        if sToken != "":
          lTokens.append(sToken)
 
-      return lTokens
+        return lTokens
